@@ -1,6 +1,6 @@
 # Multi-site SUD project — OMOP longitudinal master datasets (MCW and UW Madison)
 
-**For:** Tim and the data science team · **From:** Askar, UW ICU Data Science Lab · **Pipeline version:** `2026-10-13d` · **Built:** October 2026
+**For:** Tim and the data science team · **Built:** October 2026
 
 This repository builds one analysis-ready longitudinal dataset per site from each site's OMOP CDM v5.3 delivery, with a single shared pipeline. Both datasets have the same 225 columns in the same order. The clinical design follows the lab's UW–Madison Stata master-data pipeline. Every variable and rule is documented in **[DATA_DICTIONARY.md](DATA_DICTIONARY.md)**.
 
@@ -87,7 +87,7 @@ Both sites run the **same module files and the same 13 notebook steps**. The sit
 | 7 | Labs: censored results, non-result rows, unit harmonisation, bounds, rounding | `measurement` |
 | 8 | Nursing scales (empty at both sites) | `measurement`, `observation` |
 | 9 | Orders: imaging, ECG, echo, transfusion | `procedure_occurrence`, `device_exposure` |
-| 10 | Medication flags from the consortium's shared lists | `drug_exposure` (administration records) |
+| 10 | Medication flags from the multicenter's shared lists | `drug_exposure` (administration records) |
 | 11 | Master assembly and derived columns | Steps 2–10 |
 | 12 | Final audit | — |
 | 13 | Save in the shared 225-column schema | — |
@@ -108,16 +108,14 @@ The full list is in [DATA_DICTIONARY.md §7](DATA_DICTIONARY.md#7-caveats-for-an
 2. **Take SUD prevalence from the cohort files, not the master.** Encounters without a core vital sign are not in the master. At MCW they are 9.7% of the cohort but hold half the `nlp_opioid` encounters (7.05% in the master against 12.7% in the file).
 3. **NLP determinations are permissive.** All NLP classes are cut at probability 0.02; the cohort files contain screened-positive encounters only, with no negatives. `nlp_*_prob` is missing — not low — where the model did not score an encounter.
 4. **Medication time differs by site.** MCW flags carry the administration minute; UW administrations are dated only, so UW flags sit at 00:00 of the day (on the admission day, at the encounter's first time point).
-5. **Censored labs.** Below-detection results are stored at half the reporting limit (blood alcohol 0.005 g/dL, troponin 0.005 ng/mL); above-range results at the limit.
-6. **Troponin** combines three assays at MCW (troponin I, troponin T, high-sensitivity I from 2020) and has gaps at UW (none before 2014 or in 2016–2018). Compare within assay era.
-7. **Respiratory support** uses the Stata hierarchy (trach > BiPAP > HFNC > CPAP > nasal cannula > other > room air > vent), so `vent` = 1 only where no other device is charted that minute. UW almost never charts room air on its own (`roomair` on 48 rows).
-8. **Not delivered by either site:** CIWA-Ar, AUDIT-C, Braden and dialysis flowsheets. UW also lacks `sao2` and `bands_pct`. These columns are present and empty.
+5. **Lab results outside the test's range.** When a result is too low for the lab to measure, the lab reports text such as `<0.01` instead of a number. These are stored at half the limit (a negative blood alcohol as 0.005 g/dL, an undetectable troponin as 0.005 ng/mL); results above the range are stored at the limit (`>600` → 600). They mean "not detected" or "at least", not a measured amount: `blood_alcohol > 0` is true for every negative test, so use a cut-off above the reporting limit (e.g. ≥ 0.01 g/dL).
+6. **Respiratory support** uses the Stata hierarchy (trach > BiPAP > HFNC > CPAP > nasal cannula > other > room air > vent), so `vent` = 1 only where no other device is charted that minute. UW almost never charts room air on its own (`roomair` on 48 rows).
 
 ---
 
 ## Open items for the team
 
-**Medication classes — judgement calls left as they were.** The consortium's shared medication lists contained entries that are not drugs of their class (plain acetaminophen under `opioid_noniv`, ondansetron and famotidine under `steroid_iv`, …). These are corrected identically at both sites — 41 changes, each with its reason in `cfg.MED_KEY_CHANGES` and DATA_DICTIONARY §5 — and should go back to the shared lists so other consortium sites match. These five are for the team to decide:
+**Medication classes — judgement calls left as they were.** The multicenter's shared medication lists contained entries that are not drugs of their class (plain acetaminophen under `opioid_noniv`, ondansetron and famotidine under `steroid_iv`, …). These are corrected identically at both sites — 41 changes, each with its reason in `cfg.MED_KEY_CHANGES` and DATA_DICTIONARY §5. These five are for the team to decide:
 
 | Item | Current handling | Administration rows MCW / UW |
 |---|---|--:|
@@ -128,12 +126,6 @@ The full list is in [DATA_DICTIONARY.md §7](DATA_DICTIONARY.md#7-caveats-for-an
 | Epidural opioid–anaesthetic mixes | not flagged by any list | 90 / 0 |
 
 Chlorpheniramine as a sedative (0 / 116 rows) and the unidentified `PAR` under `abx_noniv` (0 / 0) are also listed for review.
-
-**Questions for the sites.**
-
-- *Both:* CIWA-Ar, AUDIT-C and Braden flowsheet rows are not in either OMOP extract.
-- *MCW:* 48,627 cohort encounters have no bedside record (mostly inpatient-class radiology and procedure encounters); MCW delivers deleted lab results as the number 0 (93,978 rows, handled); two master counts are exact round numbers (22,000 `icd_opioid`, 32,000 `nlp_opioid` encounters), which suggests flowsheet data was selected by SUD group.
-- *UW:* troponin results for 2016–2018 and before 2014; medication administration times (the MAR is delivered dated only); 17 patients discharged Expired with no death record.
 
 ---
 
