@@ -244,7 +244,7 @@ From `measurement` (Step 7, `pipeline_timeseries.build_labs`). The full order of
 | 91 | `troponin` | ng/mL | 3 | 3019800, 3033745, 40769783 | 3032971, 3021337 | `<x` → x/2; kept 0–∞; `DELTA` source rows dropped; convert: ng/L or pg/mL ×0.001 (MCW high-sensitivity 40769783) | 11.70 / 12.37 |
 | 92 | `wbc` | K/µL | 1 | 3000905, 3010813, 3046900 | 4298431, 3000905, 3010813, 3046900 | 0 → missing; >1000 → missing | 41.84 / 61.44 |
 
-† Not harmonised: the delivered values sit on the conventional US unit (medians: ammonia 45 / 36, CRP 2.6 / 3.2 at MCW / UW). Confirm with the sites before pooling with other sources.
+† Not harmonised: the delivered values sit on the conventional US unit (medians: ammonia 45 / 36, CRP 2.6 / 3.2 at MCW / UW). 
 
 The absolute WBC differential counts (`*_abs`) are read only to back-fill the percentages and are not delivered.
 
